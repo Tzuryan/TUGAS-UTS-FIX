@@ -15,8 +15,7 @@ async function login(request, response, next) {
     // Check login credentials
     const loginSuccess = await authenticationServices.checkLoginCredentials(
       email,
-      password,
-      page_number
+      password
     );
 
     if (!loginSuccess) {

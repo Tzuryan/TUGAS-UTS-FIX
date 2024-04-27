@@ -10,9 +10,15 @@ const { errorResponder, errorTypes } = require('../../../core/errors');
  */
 async function getUsers(request, response, next) {
   try {
-    const users = await usersService.getUsers();
+    const { page_number , page_size , search , sort  } = request.query;
+
+    // Panggil fungsi getUsers dari usersService dengan parameter yang diteruskan
+    const users = await usersService.getUsers(page_number, page_size, search, sort);
+
+    // Kirim respons JSON dengan data pengguna yang sudah diformat
     return response.status(200).json(users);
   } catch (error) {
+    // Tangani kesalahan jika terjadi dan teruskan ke middleware error handling
     return next(error);
   }
 }
