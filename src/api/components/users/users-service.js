@@ -1,48 +1,36 @@
 const usersRepository = require('./users-repository');
-
 const { hashPassword, passwordMatched } = require('../../../utils/password');
 
 /**
  * Get list of users with pagination, search, and sorting
- * @param {number} page_number - Page number (default: 1)
- * @param {number} page_size - Number of users per page (default: 10)
- * @param {string} search - Search keyword (default: '')
- * @param {string} sort - Sorting criteria (e.g., 'email:asc' or 'name:desc')
  * @returns {Array}
  */
-async function getUsers(pageNumber , pageSize , search , sort ) {
-  const page_number = parseInt(page) || 1;
+async function getUsers(pageNumber, pageSize, sort, search) {
+  const page_number = parseInt(pageNumber) || 1;
   const page_size = parseInt(pageSize) || 10;
-  const search = buildSearchQuery(search);
-  const sort = buildSortOptions(sort) || 'asc';
+  const sortP = buildSortOptions(sort);
+  const searchP = buildSearchQuery(search);
 
-  return users;
+  return await usersRepository.getUsers(page_number, page_size, sortP, searchP);
 }
   
 
 // Fungsi untuk membangun query pencarian
-function buildSearchQuery(search) {
-  let query = {};
-
-  if (!sort) {
-    return null;
-  }
-
-  const [sortField, sortOrder] = sort.split(':');
-
-  let sortOptions = {};
-  sortOptions[sortField] = sortOrder === 'desc' ? -1 : 1;
-
-  return sortOptions;
+function buildSearchQuery(searchQ) {
+  if (!searchQ) 
+    return {};
+  const [field, key] = searchQ.split(':');
+  return { [field]: { $regex: key, $options: 'i' } };
 }
 
 // Fungsi untuk membangun opsi pengurutan
-function buildSortOptions(sortField, sortOrder) {
-  let sortOptions = {};
-  sortOptions[sortField] = sortOrder === 'desc' ? -1 : 1;
-
-  return sortOptions;
+function buildSortOptions(sortQ) {
+  if (!sortQ) 
+    return { email: 1 }; 
+  const [field, order] = sortQ.split(':');
+  return { [field]: order === 'desc'? -1: 1 };
 }
+
 /**
  * Get user detail
  * @param {string} id - User ID
