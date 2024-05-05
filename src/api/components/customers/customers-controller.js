@@ -1,150 +1,84 @@
-const customersService = require('./customers-service');
-const { errorResponder, errorTypes } = require('../../../core/errors');
+const { Customer } = require('../../../models');
 
-async function getCustomers(request, response, next) {
-  try {
-    const customers = await customersService.getCustomers();
-    return response.status(200).json(customers);
-  } catch (error) {
-    return next(error);
-  }
+/**
+ * Get a list of customers
+ * @returns {Promise}
+ */
+async function getCustomers() {
+  return Customer.find({});
 }
 
-async function getCustomer(request, response, next) {
-  try {
-    const customer = await customersService.getCustomer(request.params.id);
-
-    if (!customer) {
-      throw errorResponder(errorTypes.UNPROCESSABLE_ENTITY, 'Unknown customer');
-    }
-
-    return response.status(200).json(customer);
-  } catch (error) {
-    return next(error);
-  }
+/**
+ * Get customer detail
+ * @param {string} id - Customer ID
+ * @returns {Promise}
+ */
+async function getCustomer(id) {
+  return Customer.findById(id);
 }
 
-async function createCustomer(request, response, next) {
-  try {
-    const name = request.body.name;
-    const email = request.body.email;
-    const password = request.body.password;
-    const password_confirm = request.body.password_confirm;
-
-    // Check confirmation password
-    if (password !== password_confirm) {
-      throw errorResponder(
-        errorTypes.INVALID_PASSWORD,
-        'Password confirmation mismatched'
-      );
-    }
-
-    // Email must be unique
-    const emailIsRegistered = await customersService.emailIsRegistered(email);
-    if (emailIsRegistered) {
-      throw errorResponder(
-        errorTypes.EMAIL_ALREADY_TAKEN,
-        'Email is already registered'
-      );
-    }
-
-    const success = await customersService.createCustomer(name, email, password);
-    if (!success) {
-      throw errorResponder(
-        errorTypes.UNPROCESSABLE_ENTITY,
-        'Failed to create customer'
-      );
-    }
-
-    return response.status(200).json({ name, email });
-  } catch (error) {
-    return next(error);
-  }
+/**
+ * Create new customer
+ * @param {string} name - Name
+ * @param {string} email - Email
+ * @param {string} password - Hashed password
+ * @returns {Promise}
+ */
+async function createCustomer(name, email, password) {
+  return Customer.create({
+    name,
+    email,
+    password,
+  });
 }
 
-async function updateCustomer(request, response, next) {
-  try {
-    const id = request.params.id;
-    const name = request.body.name;
-    const email = request.body.email;
-
-    // Email must be unique
-    const emailIsRegistered = await customersService.emailIsRegistered(email);
-    if (emailIsRegistered) {
-      throw errorResponder(
-        errorTypes.EMAIL_ALREADY_TAKEN,
-        'Email is already registered'
-      );
+/**
+ * Update existing customer
+ * @param {string} id - Customer ID
+ * @param {string} name - Name
+ * @param {string} email - Email
+ * @returns {Promise}
+ */
+async function updateCustomer(id, name, email) {
+  return Customer.updateOne(
+    {
+      _id: id,
+    },
+    {
+      $set: {
+        name,
+        email,
+      },
     }
-
-    const success = await customersService.updateCustomer(id, name, email);
-    if (!success) {
-      throw errorResponder(
-        errorTypes.UNPROCESSABLE_ENTITY,
-        'Failed to update customer'
-      );
-    }
-
-    return response.status(200).json({ id });
-  } catch (error) {
-    return next(error);
-  }
+  );
 }
 
-async function deleteCustomer(request, response, next) {
-  try {
-    const id = request.params.id;
-
-    const success = await customersService.deleteCustomer(id);
-    if (!success) {
-      throw errorResponder(
-        errorTypes.UNPROCESSABLE_ENTITY,
-        'Failed to delete customer'
-      );
-    }
-
-    return response.status(200).json({ id });
-  } catch (error) {
-    return next(error);
-  }
+/**
+ * Delete a customer
+ * @param {string} id - Customer ID
+ * @returns {Promise}
+ */
+async function deleteCustomer(id) {
+  return Customer.deleteOne({ _id: id });
 }
 
-async function changeCustomerPassword(request, response, next) {
-  try {
-    // Check password confirmation
-    if (request.body.password_new !== request.body.password_confirm) {
-      throw errorResponder(
-        errorTypes.INVALID_PASSWORD,
-        'Password confirmation mismatched'
-      );
-    }
+/**
+ * Get customer by email to prevent duplicate email
+ * @param {string} email - Email
+ * @returns {Promise}
+ */
+async function getCustomerByEmail(email) {
+  return Customer.findOne({ email });
+}
 
-    // Check old password
-    if (
-      !(await customersService.checkPassword(
-        request.params.id,
-        request.body.password_old
-      ))
-    ) {
-      throw errorResponder(errorTypes.INVALID_CREDENTIALS, 'Wrong password');
-    }
-
-    const changeSuccess = await customersService.changeCustomerPassword(
-      request.params.id,
-      request.body.password_new
-    );
-
-    if (!changeSuccess) {
-      throw errorResponder(
-        errorTypes.UNPROCESSABLE_ENTITY,
-        'Failed to change password'
-      );
-    }
-
-    return response.status(200).json({ id: request.params.id });
-  } catch (error) {
-    return next(error);
-  }
+/**
+ * Update customer password
+ * @param {string} id - Customer ID
+ * @param {string} password - New hashed password
+ * @returns {Promise}
+ */
+async function changePassword(id, password) {
+  return Customer.updateOne({ _id: id }, { $set: { password } });
 }
 
 module.exports = {
@@ -153,5 +87,6 @@ module.exports = {
   createCustomer,
   updateCustomer,
   deleteCustomer,
-  changeCustomerPassword,
+  getCustomerByEmail,
+  changePassword,
 };

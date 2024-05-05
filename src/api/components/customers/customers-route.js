@@ -4,42 +4,46 @@ const authenticationMiddleware = require('../../middlewares/authentication-middl
 const celebrate = require('../../../core/celebrate-wrappers');
 const customersControllers = require('./customers-controller');
 const customersValidator = require('./customers-validator');
-
+const productsRoute = require('./product-route'); // Import rute produk
 const route = express.Router();
 
 module.exports = (app) => {
-  app.use('/customers', route);
+  app.use('/customers', route); // Menggunakan '/customers' untuk rute
 
-  // Get list of customers
+  // Mendapatkan daftar customers
   route.get('/', authenticationMiddleware, customersControllers.getCustomers);
 
-  // Create customer
+  // Membuat customer baru
   route.post(
     '/',
     authenticationMiddleware,
     celebrate(customersValidator.createCustomer),
-    customersControllers.createCustomer
+    customersControllers.createCustomer // Fungsi callback untuk POST /customers
   );
 
-  // Get customer detail
-  route.get('/:id', authenticationMiddleware, customersControllers.getCustomerById);
+  // Mendapatkan detail customer
+  route.get('/:id', authenticationMiddleware, customersControllers.getCustomer);
 
-  // Update customer
+  // Memperbarui customer
   route.put(
     '/:id',
     authenticationMiddleware,
     celebrate(customersValidator.updateCustomer),
-    customersControllers.updateCustomer
+    customersControllers.updateCustomer // Fungsi callback untuk PUT /customers/:id
   );
 
-  // Delete customer
+  // Menghapus customer
   route.delete('/:id', authenticationMiddleware, customersControllers.deleteCustomer);
 
-  // Change customer password
+
+  route.use('/:customerId/products', productsRoute);
+
+  // Mengubah kata sandi customer
   route.post(
     '/:id/change-password',
     authenticationMiddleware,
-    celebrate(customersValidator.changePassword),
-    customersControllers.changeCustomerPassword
+    celebrate(customersValidator.changeCustomerPassword),
+    customersControllers.changeCustomerPassword // Fungsi callback untuk POST /customers/:id/change-password
   );
 };
+

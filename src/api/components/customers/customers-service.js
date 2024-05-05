@@ -1,8 +1,9 @@
-const customersRepository = require('./customers-repository');
+const usersRepository = require('./users-repository');
 const { hashPassword, passwordMatched } = require('../../../utils/password');
-
+const customersRepository = require('./customers-repository');
+const productsService = require('./products-service'); // Import service produk
 /**
- * Get list of customers
+ * Get list of users
  * @returns {Array}
  */
 async function getCustomers() {
@@ -22,15 +23,16 @@ async function getCustomers() {
 }
 
 /**
- * Get customer detail by ID
- * @param {string} id - Customer ID
+ * Get user detail
+ * @param {string} id - User ID
  * @returns {Object}
  */
-async function getCustomerById(id) {
-  const customer = await customersRepository.getCustomerById(id);
+async function getCustomer(id) {
+  const customer = await customersRepository.getCustomer(id);
 
+  // Customer not found
   if (!customer) {
-    return null; // Customer not found
+    return null;
   }
 
   return {
@@ -41,125 +43,125 @@ async function getCustomerById(id) {
 }
 
 /**
- * Create a new customer
- * @param {string} name - Customer's name
- * @param {string} email - Customer's email
- * @param {string} password - Customer's password
- * @returns {boolean} - Indicates if the customer was successfully created
+ * Create new user
+ * @param {string} name - Name
+ * @param {string} email - Email
+ * @param {string} password - Password
+ * @returns {boolean}
  */
-async function createCustomer(name, email, password) {
-  const hashedPassword = await hashPassword(password);
-
-  try {
-    await customersRepository.createCustomer(name, email, hashedPassword);
-    return true; // Customer created successfully
-  } catch (error) {
-    console.error('Error creating new customer:', error);
-    return false; // Failed to create customer
+  async function createCustomer(name, email, password) {
+  const isEmailRegistered = await customersRepository.getCustomerByEmail(email);
+  if (isEmailRegistered) {
+    throw new Error('Email is already registered');
   }
+  return customersRepository.createCustomer(name, email, password);
 }
 
 /**
- * Update customer information
- * @param {string} id - Customer ID
- * @param {string} name - Updated name
- * @param {string} email - Updated email
- * @returns {boolean} - Indicates if the customer was successfully updated
+ * Update existing user
+ * @param {string} id - User ID
+ * @param {string} name - Name
+ * @param {string} email - Email
+ * @returns {boolean}
  */
 async function updateCustomer(id, name, email) {
-  const customer = await customersRepository.getCustomerById(id);
+  const customer = await customersRepository.getCustomer(id);
 
+  // Customer not found
   if (!customer) {
-    return false; // Customer not found
+    return null;
   }
 
   try {
     await customersRepository.updateCustomer(id, name, email);
-    return true; // Customer updated successfully
-  } catch (error) {
-    console.error('Error updating customer:', error);
-    return false; // Failed to update customer
+  } catch (err) {
+    return null;
   }
+
+  return true;
 }
 
 /**
- * Delete customer by ID
- * @param {string} id - Customer ID
- * @returns {boolean} - Indicates if the customer was successfully deleted
+ * Delete user
+ * @param {string} id - User ID
+ * @returns {boolean}
  */
 async function deleteCustomer(id) {
-  const customer = await customersRepository.getCustomerById(id);
+  const customer = await customersRepository.getCustomer(id);
 
+  // Customer not found
   if (!customer) {
-    return false; // Customer not found
+    return null;
   }
 
   try {
     await customersRepository.deleteCustomer(id);
-    return true; // Customer deleted successfully
-  } catch (error) {
-    console.error('Error deleting customer:', error);
-    return false; // Failed to delete customer
+  } catch (err) {
+    return null;
   }
-}
 
+  return true;
+}
 /**
- * Check if an email is already registered for a customer
- * @param {string} email - Customer's email
- * @returns {boolean} - Indicates if the email is registered
+ * Check whether the email is registered
+ * @param {string} email - Email
+ * @returns {boolean}
  */
 async function emailIsRegistered(email) {
   const customer = await customersRepository.getCustomerByEmail(email);
-  return !!customer; // Return true if customer found (email registered)
+
+  if (customer) {
+    return true;
+  }
+
+  return false;
 }
 
 /**
- * Check if the provided password matches the customer's password
- * @param {string} customerId - Customer ID
- * @param {string} password - Password to check
- * @returns {boolean} - Indicates if the password matches
+ * Check whether the password is correct
+ * @param {string} userId - User ID
+ * @param {string} password - Password
+ * @returns {boolean}
  */
-async function checkPassword(customerId, password) {
-  const customer = await customersRepository.getCustomerById(customerId);
-
-  if (!customer) {
-    return false; // Customer not found
-  }
-
+async function checkPassword(userId, password) {
+  const customer = await customersRepository.getCustomer(userId);
   return passwordMatched(password, customer.password);
 }
-
 /**
- * Change customer's password
- * @param {string} customerId - Customer ID
- * @param {string} newPassword - New password
- * @returns {boolean} - Indicates if the password was successfully changed
+ * Change user password
+ * @param {string} userId - User ID
+ * @param {string} password - Password
+ * @returns {boolean}
  */
-async function changeCustomerPassword(customerId, newPassword) {
-  const customer = await customersRepository.getCustomerById(customerId);
+async function changePassword(userId, password) {
+  const customer = await customersRepository.getCustomer(userId);
 
+  // Check if customer not found
   if (!customer) {
-    return false; // Customer not found
+    return null;
   }
 
-  const hashedPassword = await hashPassword(newPassword);
+  const hashedPassword = await hashPassword(password);
 
-  try {
-    await customersRepository.updateCustomerPassword(customerId, hashedPassword);
-    return true; // Password changed successfully
-  } catch (error) {
-    console.error('Error changing customer password:', error);
-    return false; // Failed to change password
+  const changeSuccess = await customersRepository.changePassword(
+    userId,
+    hashedPassword
+  );
+
+  if (!changeSuccess) {
+    return null;
   }
+
+  return true;
 }
 
 module.exports = {
   getCustomers,
-  getCustomerById,
+  getCustomer,
   createCustomer,
   updateCustomer,
   deleteCustomer,
   emailIsRegistered,
   checkPassword,
-  changeCustomerPassword,
+  changePassword,
 };

@@ -2,43 +2,14 @@ const { Customer } = require('../../../models');
 
 /**
  * Get a list of customers
- * @param {number} pageNo - Page number
- * @param {number} pageSize - Number of items per page
- * @param {object} sort - Sorting criteria
- * @param {object} search - Search criteria
  * @returns {Promise}
  */
-async function getCustomers(pageNo = 1, pageSize = 10, sort = { email: 1 }, search = {}) {
-  const skip = (pageNo - 1) * pageSize;
-  const customers = await Customer.find(search)
-    .sort(sort)
-    .skip(skip)
-    .limit(pageSize);
-
-  const count = await Customer.countDocuments(search);
-  const totalPages = Math.ceil(count / pageSize);
-  const hasNextPage = pageNo < totalPages;
-  const hasPreviousPage = pageNo > 1;
-
-  const dataCustomers = customers.map(customer => ({
-    id: customer._id,
-    name: customer.name,
-    email: customer.email
-  }));
-
-  return {
-    page_number: pageNo,
-    page_size: pageSize,
-    count: count,
-    totalPages: totalPages,
-    has_next_page: hasNextPage,
-    has_previous_page: hasPreviousPage,
-    data: dataCustomers
-  };
+async function getCustomers() {
+  return Customer.find({});
 }
 
 /**
- * Get customer detail by ID
+ * Get customer detail
  * @param {string} id - Customer ID
  * @returns {Promise}
  */
@@ -47,7 +18,7 @@ async function getCustomer(id) {
 }
 
 /**
- * Create a new customer
+ * Create new customer
  * @param {string} name - Name
  * @param {string} email - Email
  * @param {string} password - Hashed password
@@ -57,12 +28,12 @@ async function createCustomer(name, email, password) {
   return Customer.create({
     name,
     email,
-    password
+    password,
   });
 }
 
 /**
- * Update an existing customer
+ * Update existing customer
  * @param {string} id - Customer ID
  * @param {string} name - Name
  * @param {string} email - Email
@@ -70,18 +41,20 @@ async function createCustomer(name, email, password) {
  */
 async function updateCustomer(id, name, email) {
   return Customer.updateOne(
-    { _id: id },
+    {
+      _id: id,
+    },
     {
       $set: {
         name,
-        email
-      }
+        email,
+      },
     }
   );
 }
 
 /**
- * Delete a customer by ID
+ * Delete a customer
  * @param {string} id - Customer ID
  * @returns {Promise}
  */
@@ -104,7 +77,7 @@ async function getCustomerByEmail(email) {
  * @param {string} password - New hashed password
  * @returns {Promise}
  */
-async function changeCustomerPassword(id, password) {
+async function changePassword(id, password) {
   return Customer.updateOne({ _id: id }, { $set: { password } });
 }
 
@@ -115,5 +88,5 @@ module.exports = {
   updateCustomer,
   deleteCustomer,
   getCustomerByEmail,
-  changeCustomerPassword
+  changePassword,
 };
