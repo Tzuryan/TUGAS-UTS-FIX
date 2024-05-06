@@ -40,7 +40,7 @@ module.exports = {
         .minOfUppercase(1)
         .minOfNumeric(1)
         .noWhiteSpaces()
-        .onlyLatinCharacters()
+        .onlyLatinCharacters() //Bencibackend123!
         .min(6)
         .max(32)
         .required()
